@@ -23,7 +23,6 @@ export function getSupabaseBrowserClient() {
       global: {
         headers: {
           apikey: supabaseAnonKey,
-          Authorization: `Bearer ${supabaseAnonKey}`,
         },
       },
     });
