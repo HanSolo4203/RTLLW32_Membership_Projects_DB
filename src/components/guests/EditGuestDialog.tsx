@@ -89,20 +89,37 @@ export default function EditGuestDialog({
         status: guest.status ?? "active",
       });
       setLoadingEvents(true);
-      supabase
-        .from("guest_events")
-        .select("id, event_name, event_date, contribution")
-        .eq("guest_id", guest.id)
-        .order("event_date", { ascending: false })
-        .then(({ data, error }) => {
+
+      let cancelled = false;
+      const fetchEvents = async () => {
+        try {
+          const { data, error } = await supabase
+            .from("guest_events")
+            .select("id, event_name, event_date, contribution")
+            .eq("guest_id", guest.id)
+            .order("event_date", { ascending: false });
+
           if (error) throw error;
-          setEvents((data ?? []) as EditableGuestEvent[]);
-        })
-        .catch((error) => {
-          console.error("Failed to load guest events", error);
-          toast.error("Unable to load guest events right now.");
-        })
-        .finally(() => setLoadingEvents(false));
+          if (!cancelled) {
+            setEvents((data ?? []) as EditableGuestEvent[]);
+          }
+        } catch (error) {
+          if (!cancelled) {
+            console.error("Failed to load guest events", error);
+            toast.error("Unable to load guest events right now.");
+          }
+        } finally {
+          if (!cancelled) {
+            setLoadingEvents(false);
+          }
+        }
+      };
+
+      void fetchEvents();
+
+      return () => {
+        cancelled = true;
+      };
     } else if (!open) {
       setEvents([]);
       setSaving(false);

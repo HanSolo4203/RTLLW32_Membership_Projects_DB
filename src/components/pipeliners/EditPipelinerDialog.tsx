@@ -96,20 +96,37 @@ export default function EditPipelinerDialog({
       });
 
       setLoadingEvents(true);
-      supabase
-        .from("charity_events")
-        .select("id, event_name, event_date, description, participant_ids")
-        .contains("participant_ids", [pipeliner.id])
-        .order("event_date", { ascending: false })
-        .then(({ data, error }) => {
+
+      let cancelled = false;
+      const fetchEvents = async () => {
+        try {
+          const { data, error } = await supabase
+            .from("charity_events")
+            .select("id, event_name, event_date, description, participant_ids")
+            .contains("participant_ids", [pipeliner.id])
+            .order("event_date", { ascending: false });
+
           if (error) throw error;
-          setEvents((data ?? []) as EditableCharityEvent[]);
-        })
-        .catch((error) => {
-          console.error("Failed to load charity events", error);
-          toast.error("Unable to load charity events for this pipeliner.");
-        })
-        .finally(() => setLoadingEvents(false));
+          if (!cancelled) {
+            setEvents((data ?? []) as EditableCharityEvent[]);
+          }
+        } catch (error) {
+          if (!cancelled) {
+            console.error("Failed to load charity events", error);
+            toast.error("Unable to load charity events for this pipeliner.");
+          }
+        } finally {
+          if (!cancelled) {
+            setLoadingEvents(false);
+          }
+        }
+      };
+
+      void fetchEvents();
+
+      return () => {
+        cancelled = true;
+      };
     } else if (!open) {
       setEvents([]);
       setSaving(false);
