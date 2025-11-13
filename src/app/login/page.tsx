@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2Icon, LockIcon, LogInIcon } from "lucide-react";
 import { toast } from "sonner";
@@ -21,14 +21,21 @@ function LoginContent() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const performRedirect = useCallback(() => {
+    router.replace(redirectTo);
+    router.refresh();
+    if (typeof window !== "undefined") {
+      window.location.href = redirectTo;
+    }
+  }, [redirectTo, router]);
+
   useEffect(() => {
     let isMounted = true;
 
     const checkSession = async () => {
       const { data } = await supabase.auth.getSession();
       if (isMounted && data.session) {
-        router.replace(redirectTo);
-        router.refresh();
+        performRedirect();
       }
     };
 
@@ -36,8 +43,7 @@ function LoginContent() {
 
     const { data: subscription } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) {
-        router.replace(redirectTo);
-        router.refresh();
+        performRedirect();
       }
     });
 
@@ -45,7 +51,7 @@ function LoginContent() {
       isMounted = false;
       subscription.subscription.unsubscribe();
     };
-  }, [redirectTo, router, supabase]);
+  }, [performRedirect, supabase]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -63,8 +69,7 @@ function LoginContent() {
       }
 
       toast.success("Signed in successfully.");
-      router.replace(redirectTo);
-      router.refresh();
+      performRedirect();
     } catch (error) {
       console.error("Failed to sign in", error);
       toast.error(
