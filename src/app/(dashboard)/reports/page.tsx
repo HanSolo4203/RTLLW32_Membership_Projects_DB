@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import type { ComponentType } from "react";
 import { format, isValid, parseISO } from "date-fns";
 import {
   AlertTriangleIcon,
@@ -18,12 +19,7 @@ import { toast } from "sonner";
 
 import { useReportsData } from "@/hooks/useReportsData";
 import type { ReportsAttendanceRecord } from "@/hooks/useReportsData";
-import { exportAttendanceWorkbookToExcel } from "@/lib/exportToExcel";
-import { exportYearEndReportToPDF } from "@/lib/exportToPDF";
 import { cn } from "@/lib/utils";
-import { AttendanceMatrix, type AttendanceMatrixSortOption } from "@/components/reports/AttendanceMatrix";
-import { TrendChart } from "@/components/reports/TrendChart";
-import { ExportButton } from "@/components/reports/ExportButton";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -127,13 +123,6 @@ function getRowTone(percentage: number) {
   if (percentage >= 60) return "bg-blue-50";
   if (percentage >= 40) return "bg-amber-50/60";
   return "bg-rose-50/70";
-}
-
-function formatPercentage(value: number | null | undefined) {
-  if (value === null || value === undefined || Number.isNaN(value)) {
-    return "0%";
-  }
-  return `${Math.round(value)}%`;
 }
 
 function formatDateLabel(value: string | null | undefined, fallback = "—") {
@@ -325,8 +314,6 @@ export default function ReportsPage() {
       const parsed = parseDate(dateString);
       if (!parsed) return;
       const key = format(parsed, "yyyy-MM");
-      const label = format(parsed, "MMM yyyy");
-
       const entry =
         monthMap.get(key) ??
         {
@@ -1840,13 +1827,13 @@ export default function ReportsPage() {
   );
 
   const renderExport = () => {
-    const exportButtons: Array<{
-      key: ExportKey;
-      title: string;
-      description: string;
-      icon: React.ComponentType<{ className?: string }>;
-      action: () => void | Promise<void>;
-    }> = [
+  const exportButtons: Array<{
+    key: ExportKey;
+    title: string;
+    description: string;
+    icon: ComponentType<{ className?: string }>;
+    action: () => void | Promise<void>;
+  }> = [
       {
         key: "combinedPdf",
         title: "Leadership Snapshot (PDF)",
@@ -1949,7 +1936,7 @@ export default function ReportsPage() {
     id: typeof activeTab;
     label: string;
     description: string;
-    icon: React.ComponentType<{ className?: string }>;
+    icon: ComponentType<{ className?: string }>;
   }> = [
     {
       id: "overview",
