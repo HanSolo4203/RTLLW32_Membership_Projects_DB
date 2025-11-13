@@ -1,14 +1,15 @@
 "use client";
 
-import type { ComponentType } from "react";
+import { type ComponentType, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   BarChart3,
   CalendarCheck,
   CalendarDays,
   FileText,
   LayoutDashboard,
+  LogOut,
   Rocket,
   Settings,
   Users,
@@ -17,6 +18,8 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { getSupabaseBrowserClient } from "@/lib/supabaseClient";
+import { toast } from "sonner";
 
 type NavItem = {
   label: string;
@@ -51,6 +54,26 @@ function isActivePath(pathname: string, item: NavItem) {
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const supabase = getSupabaseBrowserClient();
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    if (loggingOut) return;
+
+    setLoggingOut(true);
+    const { error } = await supabase.auth.signOut();
+
+    if (error) {
+      toast.error("Failed to sign out. Please try again.");
+      setLoggingOut(false);
+      return;
+    }
+
+    toast.success("Signed out successfully.");
+    router.replace("/login");
+    setLoggingOut(false);
+  };
 
   return (
     <aside className="relative hidden shrink-0 border-r border-slate-200 bg-gradient-to-b from-white via-slate-50 to-slate-100/80 px-4 pb-8 pt-6 shadow-sm backdrop-blur print:hidden lg:block xl:w-72">
@@ -93,12 +116,42 @@ export function AppSidebar() {
           Use the dashboard to monitor attendance momentum before every meeting.
         </p>
       </div>
+
+      <Button
+        variant="ghost"
+        onClick={handleLogout}
+        disabled={loggingOut}
+        className="mt-6 w-full gap-2 rounded-xl border border-transparent bg-white/80 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-blue-100 hover:bg-blue-50 hover:text-blue-700"
+      >
+        <LogOut className="size-4" />
+        {loggingOut ? "Signing out…" : "Sign out"}
+      </Button>
     </aside>
   );
 }
 
 export function MobileNav() {
   const pathname = usePathname();
+  const router = useRouter();
+  const supabase = getSupabaseBrowserClient();
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    if (loggingOut) return;
+
+    setLoggingOut(true);
+    const { error } = await supabase.auth.signOut();
+
+    if (error) {
+      toast.error("Failed to sign out. Please try again.");
+      setLoggingOut(false);
+      return;
+    }
+
+    toast.success("Signed out successfully.");
+    router.replace("/login");
+    setLoggingOut(false);
+  };
 
   return (
     <nav className="sticky bottom-0 z-40 border-t border-slate-200 bg-white/90 shadow-[0_-6px_24px_-16px_rgba(15,23,42,0.35)] backdrop-blur print:hidden lg:hidden">
@@ -125,6 +178,16 @@ export function MobileNav() {
             </Button>
           );
         })}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleLogout}
+          disabled={loggingOut}
+          className="flex-1 flex-col gap-1 rounded-xl px-2 py-2 text-[11px] font-medium text-slate-500"
+        >
+          <LogOut className="size-4 text-slate-400" />
+          {loggingOut ? "Signing out…" : "Sign out"}
+        </Button>
       </div>
     </nav>
   );
